@@ -47,8 +47,8 @@ class Ecosystem:
     organisms               = [] 
     best_organism_funct     = lambda x:1
 
-    def __init__(self, organisms:list, best_organism_funct:function, 
-                       termination_criteria:function):
+    def __init__(self, organisms:list, best_organism_funct:callable, 
+                       termination_criteria:callable):
         self.termination_criteria    = termination_criteria
            
         self.number_of_organisms     = len(organism_list) 
@@ -107,7 +107,7 @@ class Ecosystem:
         if (Xi.fitness_function() > Xj.fitness_function()):
             Xj_final = Xi
 
-         self.organisms[self.organisms.index(Xj)] = copy.deepcopy(Xj_final)         
+        self.organisms[self.organisms.index(Xj)] = copy.deepcopy(Xj_final)         
 
     def execute(self, iterations:int):
         while(self.n_iteration < iterations):
