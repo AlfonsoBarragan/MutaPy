@@ -162,10 +162,20 @@ class Organism:
 
     """
     _fitness_function   = lambda x:1
-    attribute_list      = []
+    _random_function    = lambda x:1
+    _show_function      = lambda x:1
 
-    def __init__(self, attribute_list:list):
-       self.attribute_list      = attribute_list
+    attribute_list      = []
+    interval_by_attr    = []
+
+    def __init__(self, attribute_list:list, interval_by_attr:list,
+                    _fitness_function, _random_function, _show_function):
+        self.attribute_list         = attribute_list
+        self.interval_by_attr       = interval_by_attr
+        self._fitness_function      = _fitness_function
+        self._random_function       = _random_function
+        self._show_function         = _show_function
+
 
     def __add__(self, other):
         return 1
@@ -174,10 +184,17 @@ class Organism:
         return 1
     def fitness_function(self):
         # OVERWRITE IT!
-        return 1
+        return self._fitness_function(self)
 
     def parasite_mutation(self):
         # OVERWRITE IT!
         return 1
+    
+    def randomize_organism(self):
+        # OVERWRITE IT IF YOU NEED!
+        return self._random_function(self)
 
-
+    def show_organism(self):
+        # OVERWRITE IT!
+        return self._show_function(self)
+        
