@@ -1,3 +1,6 @@
+from dataclasses import dataclass
+
+@dataclass(init=True, repr=True)
 class Solution:
     """Solution class is a generic class to model the form and proccess that
         affects to the solutions of the optimization problem. You should overwrite
@@ -69,29 +72,18 @@ class Solution:
                                                 current solution.
             
     """
-    _fitness_function   = lambda x:1
-    _random_function    = lambda x:1
-    _show_function      = lambda x:1
-    _mutation_function  = lambda x:1
+    _fitness_function: callable
+    _random_function: callable
+    _show_function: callable
+    _mutation_function: callable
 
-    _add_funct = lambda x:1 
-    _sub_funct = lambda x:1
-    _mul_funct = lambda x:1
-    _div_funct = lambda x:1
+    _add_funct: callable
+    _sub_funct: callable
+    _mul_funct: callable
+    _div_funct: callable
 
-    attribute_list      = []
-    interval_by_attr    = []
-
-    def __init__(self, attribute_list:list, interval_by_attr:list,
-                    _fitness_function, _random_function, _show_function, 
-                    _mutation_function):
-
-        self.attribute_list         = attribute_list
-        self.interval_by_attr       = interval_by_attr
-        self._fitness_function      = _fitness_function
-        self._random_function       = _random_function
-        self._show_function         = _show_function
-        self._mutation_function     = _mutation_function
+    attribute_list: list
+    interval_by_attr: list
 
     def __add__(self, other):
         return self._add_funct(self, other) 

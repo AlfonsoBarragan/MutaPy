@@ -1,5 +1,7 @@
 import copy
+import numpy as np
 import random
+
 
 from Galfgets import printProgressBar
 from Solution import Solution
@@ -10,7 +12,7 @@ from Solution import Solution
 ## Authors: R. Eberhart, J. Kennedy 
 ## Year: 1995 
 
-def _PSO_speed(weight_factor, particle, best_particle_pos, vmax, vmin, individual_learn, social_learn):
+def _PSO_speed(weight_factor:float, particle:Solution, best_particle_pos:list, vmax:float, vmin:float, individual_learn:float, social_learn:float) -> list:
     
     # Lambdas
     speed_lamb = lambda x: int(weight_factor * x[1] + individual_learn * random.random() * (x[2]-x[0]) + 
@@ -27,7 +29,7 @@ def _PSO_speed(weight_factor, particle, best_particle_pos, vmax, vmin, individua
     #return list(map(dgt_lamb, list(map(speed_lamb, particle_elements))))
     return list(map(speed_lamb, particle_elements))
 
-def _PSO_position(particle):
+def _PSO_position(particle:Solution) -> list:
  
     # Lambdas
     post_lamb = lambda x: int(x[0] + x[1]) 
@@ -46,14 +48,14 @@ def _PSO_position(particle):
     
     return final_pos
 
-def _PSO_init(population, v_max, v_min):
+def _PSO_init(population:list, v_max:float, v_min:float) -> None:
         
     for particle in population:
         particle.particle_dict['pBest'] = copy.deepcopy(particle.attribute_list)
         particle.particle_dict['velocity'] = [random.uniform(v_min,v_max) for i in range(len(particle.attribute_list))]
         particle.particle_dict['pBest_fitness'] = 99999
     
-def PSO_algorithm(population, max_iters, init=True, decreasing_rate=0.5, ind_rate=1, soc_rate=2, v_max=3, v_min=1):   
+def PSO_algorithm(population:list, max_iters:int, init:bool=True, decreasing_rate:float=0.5, ind_rate:float=1, soc_rate:float=2, v_max:float=3, v_min:float=1) -> None:   
     """
     Pseudocode:
     Begin;
@@ -118,7 +120,7 @@ def PSO_algorithm(population, max_iters, init=True, decreasing_rate=0.5, ind_rat
 mult_sol_float = lambda attr, value: map(lambda x: x*value, attr)
 div_list_int   = lambda attr, value: map(lambda x: x/value, attr)
 
-def _mutualism_phase(Xi_index, X_best, population):
+def _mutualism_phase(Xi_index:int, X_best:int, population:list) -> None:
     # Organisms selection
     population_copy = copy.deepcopy(population)
     Xi = population[Xi_index]
@@ -161,7 +163,7 @@ def _mutualism_phase(Xi_index, X_best, population):
     population[Xi_index] = copy.deepcopy(Xi_final)         
     population[Xj_index] = copy.deepcopy(Xj_final)         
 
-def _commensalism_phase(Xi_index, X_best, population):
+def _commensalism_phase(Xi_index:int, X_best:int, population:list) -> None:
     population_copy = copy.deepcopy(population)
     Xi = population[Xi_index]
     
@@ -179,7 +181,7 @@ def _commensalism_phase(Xi_index, X_best, population):
 
     population[Xi_index] = copy.deepcopy(Xi_final) 
 
-def _parasitism_phase(Xi_index, population):
+def _parasitism_phase(Xi_index:int, population:list) -> None:
     population_copy = copy.deepcopy(population)
     Xi = population[Xi_index]
     
@@ -194,7 +196,7 @@ def _parasitism_phase(Xi_index, population):
 
     population[population_copy.index(Xj)] = copy.deepcopy(Xj_final)         
 
-def SOS_algorithm(iterations:int, termination_criteria, population):
+def SOS_algorithm(iterations:int, termination_criteria:callable, population:list) -> None:
     n_iteration = 0       
 
     while(n_iteration < iterations):
@@ -212,6 +214,9 @@ def SOS_algorithm(iterations:int, termination_criteria, population):
 
             _parasitism_phase(Xi_index, population)
 
+        if termination_criteria(population):
+            break
+
         n_iteration += 1
 
 # Symbiotic Organisms Search Algorithm
@@ -219,7 +224,9 @@ def SOS_algorithm(iterations:int, termination_criteria, population):
 ## DOI: https://doi.org/10.1016/j.compstruc.2014.03.007
 ## Authors: Min-Yuan Cheng, Doddy Prayogo
 ## Year: 2014
-def pseudo_random_proportional_rule(solution, pheromones, alpha, beta, nodes_not_discovered):
+def pseudo_random_proportional_rule(solution:Solution, pheromones:np.array, alpha:float, 
+                                    beta:float, nodes_not_discovered:list) -> list:
+
     last_parameter_assign = len(solution.attribute_list)-1
     posible_nodes = []
 
@@ -240,7 +247,9 @@ def pseudo_random_proportional_rule(solution, pheromones, alpha, beta, nodes_not
     
     return posible_nodes
 
-def best_node_selection(solution, pheromones, alpha, beta, nodes_not_discovered):
+def best_node_selection(solution:Solution, pheromones:np.array, alpha:float, 
+                        beta:float, nodes_not_discovered:list) -> list:
+                        
     last_parameter_assign = len(solution.attribute_list)-1
     posible_nodes = []
 
@@ -255,8 +264,9 @@ def best_node_selection(solution, pheromones, alpha, beta, nodes_not_discovered)
         
     return posible_nodes
 
-def ACS_algorithm(total_iters, termination_criteria, population, q0, 
-                  phi, sol_dims, init_pheromone, persistence, alpha, beta, pheromones=[]):
+def ACS_algorithm(total_iters:int, termination_criteria:callable, population:list, q0:float, 
+                  phi:float, sol_dims:list, init_pheromone:float, persistence:float, alpha:float, 
+                  beta:float, pheromones:list=[]) -> np.array:
     
     n_iter = 0
     
