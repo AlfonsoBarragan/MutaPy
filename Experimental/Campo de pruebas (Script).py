@@ -733,14 +733,29 @@ def CSA_algorithm(init_population, max_iters, stop_criteria):
 
 # In[2]:
 
-def WAO_init(population):
+def WOA_init(population):
     
     a = np.full(shape=[1, len(population[0].attribute_list)])
 
     return a    
     
 
-def WAO_algorithm(total_iters, population, a, a_step, b, A, C):
+def WOA_encircle_search(actual_whale, whale_to_update, parameter_A, parameter_C):
+"""
+A ver en general encircle prey y search son literalmente el mismo metodo, por eso lo
+hago asi todo junto. Que esta muy bien lo de los algoritmos inspirados en naturaleza
+pero esta mejor no tener codigo clon a punta pala.
+"""
+    parameter_D = np.linalg.norm(np.multiply(parameter_C, whale_to_update.attribute_list) - actual_whale.attribute_list)
+    return whale_to_update.attribute_list - np.multiply(parameter_A, parameter_D)
+
+def WOA_attack(whale, best_whale, constant_b, parameter_l):
+    parameter_D = np.linalg.norm(best_whale.attribute_list - whale.attribute_list)
+
+    return np.multiply(np.multiply(parameter_D, np.exp(constant_b*parameter_l)), np.cos(2.0*np.pi*parameter_l)) + best_whale.attribute_list
+
+
+def WOA_algorithm(total_iters, population, a, a_step, b, A, C):
 
     n_iter = 0
     
@@ -752,7 +767,7 @@ def WAO_algorithm(total_iters, population, a, a_step, b, A, C):
     printProgressBar(0, total_iters)
 
     while n_iter < total_iters:
-        for whale in population:
+        for whale_index, whale in enumerate(population):
             a -= a_step
             A = 2 * a - np.random.rand(*a.shape) - a
             C = 2 * np.random.rand(*a.shape)
@@ -762,15 +777,22 @@ def WAO_algorithm(total_iters, population, a, a_step, b, A, C):
             
             if p < 0.5:
                 #bubble net hunting
-                if np.linealg.norm(A) > 1:
-                    pass
+                if np.linalg.norm(A) < 1:
+                    new_attributes = WOA_encircle_search(whale, best_whale, A, C)
+
+                else:
+                    random_whale = random.choice(population[0:whale_index]+population[whale_index+1:])
+                    new_attributes = WOA_encircle_search(whale, random_whale, A, C)
             else:
-                #search for prey
-                pass
-
+                new_attributes = WOA_attack(actual_whale, best_whale, b, l)
+            
+            actual_whale.attribute_list = new_attributes
                 
-    
+        fitness_results = [whale.fitness_function() for whale in population]
+        best_whale = population[fitness_results.index(min(fitness_results))]
 
+        total_iters += 1
+                
 
 # In[3]:
 
