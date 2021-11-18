@@ -224,7 +224,7 @@ def SOS_algorithm(iterations:int, termination_criteria:callable, population:list
 ## DOI: https://doi.org/10.1016/j.compstruc.2014.03.007
 ## Authors: Min-Yuan Cheng, Doddy Prayogo
 ## Year: 2014
-def pseudo_random_proportional_rule(solution:Solution, pheromones:np.array, alpha:float, 
+def _pseudo_random_proportional_rule(solution:Solution, pheromones:np.array, alpha:float, 
                                     beta:float, nodes_not_discovered:list) -> list:
 
     last_parameter_assign = len(solution.attribute_list)-1
@@ -247,7 +247,7 @@ def pseudo_random_proportional_rule(solution:Solution, pheromones:np.array, alph
     
     return posible_nodes
 
-def best_node_selection(solution:Solution, pheromones:np.array, alpha:float, 
+def _best_node_selection(solution:Solution, pheromones:np.array, alpha:float, 
                         beta:float, nodes_not_discovered:list) -> list:
                         
     last_parameter_assign = len(solution.attribute_list)-1
@@ -290,7 +290,7 @@ def ACS_algorithm(total_iters:int, termination_criteria:callable, population:lis
             while nodes_not_discovered != []:
                 # Compute pseudo-random proporcional rule                
                 if random.uniform(0,1) <= q0:
-                    nodes_viable = best_node_selection(ant, pheromones, alpha, beta,
+                    nodes_viable = _best_node_selection(ant, pheromones, alpha, beta,
                                                        nodes_not_discovered)
                     
                     node_sel = min(nodes_viable)
@@ -300,7 +300,7 @@ def ACS_algorithm(total_iters:int, termination_criteria:callable, population:lis
                     nodes_not_discovered = nodes_not_discovered[:new_state] + nodes_not_discovered[new_state+1:]
                     
                 else:
-                    nodes_viable = pseudo_random_proportional_rule(ant, pheromones, alpha, beta,
+                    nodes_viable = _pseudo_random_proportional_rule(ant, pheromones, alpha, beta,
                                                                    nodes_not_discovered)
                     
                     node_sel = choice(nodes_not_discovered, 1, nodes_viable)
@@ -346,4 +346,67 @@ def ACS_algorithm(total_iters:int, termination_criteria:callable, population:lis
 ## Year: 2014
 
 
+# Whale optimization algorithm 
+## Paper's title: The  Whale  Optimization  Algorithm
+## DOI: https://doi.org/10.1016/j.advengsoft.2016.01.008
+## Authors: Seyedali Mirjaliliab, Andrew Lewisa
+## Year: 2016
 
+def _WOA_init(population):
+    a = np.full(shape=[1, len(population[0].attribute_list)])
+
+    return a    
+    
+
+def _WOA_encircle_search(actual_whale, whale_to_update, parameter_A, parameter_C):
+"""
+A ver en general encircle prey y search son literalmente el mismo metodo, por eso lo
+hago asi todo junto. Que esta muy bien lo de los algoritmos inspirados en naturaleza
+pero esta mejor no tener codigo clon a punta pala.
+"""
+    parameter_D = np.linalg.norm(np.multiply(parameter_C, whale_to_update.attribute_list) - actual_whale.attribute_list)
+    return whale_to_update.attribute_list - np.multiply(parameter_A, parameter_D)
+
+def _WOA_attack(whale, best_whale, constant_b, parameter_l):
+    parameter_D = np.linalg.norm(best_whale.attribute_list - whale.attribute_list)
+    return np.multiply(np.multiply(parameter_D, np.exp(constant_b*parameter_l)), np.cos(2.0*np.pi*parameter_l)) + best_whale.attribute_list
+
+
+def WOA_algorithm(total_iters, population, a, a_step, b, A, C):
+
+    n_iter = 0
+    
+    fitness_results = [whale.fitness_function() for whale in population]
+    best_whale = population[fitness_results.index(min(fitness_results))]
+
+    a = _WAO_init(population)
+    
+    printProgressBar(0, total_iters)
+
+    while n_iter < total_iters:
+        for whale_index, whale in enumerate(population):
+            a -= a_step
+            A = 2 * a - np.random.rand(*a.shape) - a
+            C = 2 * np.random.rand(*a.shape)
+            
+            l = np.random.rand(*a.shape)
+            p = random.uniform(0, 1)
+            
+            if p < 0.5:
+                #bubble net hunting
+                if np.linalg.norm(A) < 1:
+                    new_attributes = _WOA_encircle_search(whale, best_whale, A, C)
+
+                else:
+                    random_whale = random.choice(population[0:whale_index]+population[whale_index+1:])
+                    new_attributes = _WOA_encircle_search(whale, random_whale, A, C)
+            else:
+                new_attributes = _WOA_attack(actual_whale, best_whale, b, l)
+            
+            actual_whale.attribute_list = new_attributes
+                
+        fitness_results = [whale.fitness_function() for whale in population]
+        best_whale = population[fitness_results.index(min(fitness_results))]
+
+        total_iters += 1
+                

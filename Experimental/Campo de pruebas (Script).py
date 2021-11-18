@@ -751,7 +751,6 @@ pero esta mejor no tener codigo clon a punta pala.
 
 def WOA_attack(whale, best_whale, constant_b, parameter_l):
     parameter_D = np.linalg.norm(best_whale.attribute_list - whale.attribute_list)
-
     return np.multiply(np.multiply(parameter_D, np.exp(constant_b*parameter_l)), np.cos(2.0*np.pi*parameter_l)) + best_whale.attribute_list
 
 
