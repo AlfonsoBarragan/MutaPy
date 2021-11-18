@@ -6,6 +6,23 @@ import random
 from Galfgets import printProgressBar
 from Solution import Solution
 
+# Methods to modify solutions in algorithm execution
+def _clean_population_attr(population:list) -> void:
+    for solution in population:
+        solution.attribute_list = []
+
+def _add_step_to_population(population:list) -> void:
+    for solution_index, solution in enumerate(population):
+        solution.attribute_list.append(0) 
+
+def _check_possible_next_step(solution:Solution) -> list:
+    sol_dims = len(solution.interval_by_attr)
+
+    nodes_not_discovered = [i for i in range(sol_dims-1)]
+    nodes_not_discovered = nodes_not_discovered[:solution.attribute_list[0]] + nodes_not_discovered[solution.attribute_list[0]+1:]
+
+    return nodes_not_discovered
+
 # Particle Swarm Optimization Algorithm 
 ## Paper's title: A new optimizer using particle swarm theory
 ## DOI: 10.1109/MHS.1995.494215 
@@ -264,15 +281,23 @@ def _best_node_selection(solution:Solution, pheromones:np.array, alpha:float,
         
     return posible_nodes
 
+def ACS_init_pheromones(pheromones, sol_dims):
+    if pheromones == []:
+        pheromones = np.full((sol_dims,sol_dims), init_pheromone)
+        pheromones[np.eye(sol_dims) == 1] = 0
+
+    return pheromones
+
 def ACS_algorithm(total_iters:int, termination_criteria:callable, population:list, q0:float, 
-                  phi:float, sol_dims:list, init_pheromone:float, persistence:float, alpha:float, 
+                  phi:float, init_pheromone:float, persistence:float, alpha:float, 
                   beta:float, pheromones:list=[]) -> np.array:
     
     n_iter = 0
     
-    if pheromones == []:
-        pheromones = np.full((sol_dims,sol_dims), init_pheromone)
-        pheromones[np.eye(sol_dims) == 1] = 0
+    sol_dims = len(population[0].interval_by_attr)
+
+    pheromones = ACS_init_pheromones(pheromones, sol_dims)
+
     
     updating_pheromones = lambda phero: (1-persistence)*phero
 
@@ -280,13 +305,11 @@ def ACS_algorithm(total_iters:int, termination_criteria:callable, population:lis
     printProgressBar(0, total_iters)
     while n_iter < total_iters:
         
-        for i, ant in enumerate(population):
-            ant.attribute_list.append(i % sol_dims)            
+        _add_step_to_population(population)           
                     
         for ant in population:
-            nodes_not_discovered = [i for i in range(sol_dims-1)]
-            nodes_not_discovered = nodes_not_discovered[:ant.attribute_list[0]] + nodes_not_discovered[ant.attribute_list[0]+1:]
-            
+            nodes_not_discovered = check_possible_next_step(ant)
+
             while nodes_not_discovered != []:
                 # Compute pseudo-random proporcional rule                
                 if random.uniform(0,1) <= q0:

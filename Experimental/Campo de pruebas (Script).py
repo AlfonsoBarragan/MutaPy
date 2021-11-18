@@ -571,6 +571,10 @@ def ACS_init_pheromones(pheromones, sol_dims):
 
     return pheromones
 
+def clean_population_attr(population):
+    for solution in population:
+        solution.attribute_list = []
+
 def add_step_to_solution(population):
     for solution_index, solution in enumerate(population):
         solution.attribute_list.append(0) 
