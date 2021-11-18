@@ -19,7 +19,8 @@ from SpiderBioHazardLink import NatureInspiredAlgorithms
 
 from numpy.random import choice
 from sos_algorithm import Organism
-from Galfgets import printProgressBar
+from Galfgets import printProgressBar, mean, standard_desviation
+from datetime import datetime
 
 
 # In[42]:
@@ -178,9 +179,9 @@ random_function = lambda x: random_funct(x)
 n_queens_sol = Solution(fit_function, random_function, show_function, mutation_function, 
                         add_sols, subs_sols, mult_sols, div_sols, attrs, int_by_attr)
 
-population = generate_population(10, 8)
+population = generate_population(100, 32)
 
-population_ACS = generate_population(100, 10)
+population_ACS = generate_population(100, 16)
 
 
 # ### PSO ALGORITHM
@@ -230,7 +231,8 @@ def PSO_init(population, v_max, v_min):
         particle.particle_dict['pBest'] = copy.deepcopy(particle.attribute_list)
         particle.particle_dict['velocity'] = [random.uniform(v_min,v_max) for i in range(len(particle.attribute_list))]
         particle.particle_dict['pBest_fitness'] = 99999
-    
+
+@print_basic_info
 def PSO_algorithm(population, max_iters, init=True, decreasing_rate=0.5, ind_rate=1, soc_rate=2, v_max=3, v_min=1):   
     """
     Pseudocode:
@@ -288,26 +290,113 @@ def PSO_algorithm(population, max_iters, init=True, decreasing_rate=0.5, ind_rat
             
         printProgressBar(i, max_iters)
 
-# PSO_algorithm(population, 1, True, 0.5, 1, 2, 10, 0.01)
-#PSO_algorithm(population, 10, False, 0.5, 1, 2, 10, 0.01)
-#PSO_algorithm(population, 10, False, 0.5, 1, 2, 10, 0.01)
-PSO_algorithm(population, 10000, False, 0.7, 3, 5, 100, 0.001)
+
+#%%
+
+PSO_algorithm(population, 1, True, 0.5, 1, 2, 10, 0.01)
+# PSO_algorithm(population, 10, False, 0.5, 1, 2, 10, 0.01)
+# PSO_algorithm(population, 10, False, 0.5, 1, 2, 10, 0.01)
+# PSO_algorithm(population, 2000, False, 0.7, 3, 5, 100, 0.001)
+# PSO_algorithm(population, 100, False, 0.7, 3, 5, 2000, 20)
 
 
-# In[121]:
 
 
 fitness_vals = [particle.fitness_function() for particle in population]
 print(fitness_vals)
 
-print(population[8].attribute_list)
+print(population[7].attribute_list)
 print(fitness_vals.index(min(fitness_vals)))
 print(min(fitness_vals))
 
 
-# ### SOS ALGORITHM
 
-# In[77]:
+#%%
+
+def print_basic_info(func):
+    
+    def compute(*args, **kwargs):
+        
+        func(*args, **kwargs)
+        
+        print('#' * 100)
+        print('Basic statitics from algorithm')
+        print(f'\t\t>> Best fitness value: {min([part.fitness_function() for part in population])}')
+        print(f'\t\t>> Mean fitness value: {mean([part.fitness_function() for part in population])}')
+        print(f'\t\t>> Std-dev fitness value: {standard_desviation([part.fitness_function() for part in population])}\n')
+        
+        print('Fitness Values desglosed')
+        print([part.fitness_function() for part in population])
+        
+        print('#' * 100)
+        
+    return compute
+
+
+def compute_time(func):
+    
+    def inner(*args, **kwargs):
+        print('begin time measurement...')
+        print('*' * 30)
+        start = datetime.now()
+        
+        func(*args, **kwargs)
+        
+        ended = datetime.now()
+        print(f'This function took {ended-start} time')
+        print('\n')
+        print('*' * 30)
+        
+    return inner
+
+def precision(nat_alg, total_iters=100):
+    
+    def compute(*args, **kwargs):
+        print('init measurement...\n')
+        
+        last_fit = [particle.fitness_function() for particle in population]
+        precision_computed = []
+                
+        for i in range(total_iters):
+            nat_alg(*args, **kwargs)
+            sols_summary = [True if last_fit[index] - particle.fitness_function() > 0 else False for index, particle in enumerate(population)]
+            
+            precision_computed.append(sols_summary.count(True)/len(sols_summary))
+            
+        print('*' * 100)
+        print(f'\nPrecision of algorithm: {mean(precision_computed)}\nPrecisions obtained: {precision_computed}\n')
+        
+    return compute
+
+def recall(nat_alg, total_iters=100):
+    
+    def compute(*args, **kwargs):
+        print('init measurement...\n')
+        
+        last_fit = []
+        precision_computed = []
+        
+        last_fit = [particle.fitness_function() for particle in population]
+        
+        for i in range(total_iters):
+            nat_alg(*args, **kwargs)
+            sols_summary = [True if last_fit[index] - particle.fitness_function() < last_fit[index] else False for index, particle in enumerate(population)]
+            precision_computed.append(sols_summary.count(True)/len(sols_summary))
+            
+        print('*' * 100)
+        print(f'\nPrecision of algorithm: {mean(precision_computed)}\nPrecisions obtained: {precision_computed}\n')
+        
+    return compute
+        
+        
+precision_PSO = precision(PSO_algorithm, 20)(population, 100, False, 0.7, 3, 5, 1002, 0.1)
+
+#%%
+precision_SOS = precision(SOS_algorithm, 5)(10, 1, population)
+
+#%%
+
+# ### SOS ALGORITHM
 
 
 mult_sol_float = lambda attr, value: map(lambda x: x*value, attr)
@@ -389,6 +478,7 @@ def _parasitism_phase(Xi_index, population):
 
     population[population_copy.index(Xj)] = copy.deepcopy(Xj_final)         
 
+@print_basic_info
 def SOS_algorithm(iterations:int, termination_criteria, population):
     n_iteration = 0       
     
@@ -639,14 +729,47 @@ def CSA_algorithm(init_population, max_iters, stop_criteria):
     
     for iteration in range(max_iters):
         
-
+        pass
 
 # In[2]:
 
+def WAO_init(population):
+    
+    a = np.full(shape=[1, len(population[0].attribute_list)])
 
-import numpy as np
-import matplotlib.pylab as plt
-import mistree as mist
+    return a    
+    
+
+def WAO_algorithm(total_iters, population, a, a_step, b, A, C):
+
+    n_iter = 0
+    
+    fitness_results = [whale.fitness_function() for whale in population]
+    best_whale = population[fitness_results.index(min(fitness_results))]
+
+    a = WAO_init(population)
+    
+    printProgressBar(0, total_iters)
+
+    while n_iter < total_iters:
+        for whale in population:
+            a -= a_step
+            A = 2 * a - np.random.rand(*a.shape) - a
+            C = 2 * np.random.rand(*a.shape)
+            
+            l = np.random.rand(*a.shape)
+            p = random.uniform(0, 1)
+            
+            if p < 0.5:
+                #bubble net hunting
+                if np.linealg.norm(A) > 1:
+                    pass
+            else:
+                #search for prey
+                pass
+
+                
+    
 
 
 # In[3]:
