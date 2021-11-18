@@ -564,27 +564,43 @@ def best_node_selection(solution, pheromones, alpha, beta, nodes_not_discovered)
         
     return posible_nodes
 
-def ACS_algorithm(total_iters, termination_criteria, population, q0, 
-                  phi, sol_dims, init_pheromone, persistence, alpha, beta, pheromones=[]):
-    
-    n_iter = 0
-    
+def ACS_init_pheromones(pheromones, sol_dims):
     if pheromones == []:
         pheromones = np.full((sol_dims,sol_dims), init_pheromone)
         pheromones[np.eye(sol_dims) == 1] = 0
+
+    return pheromones
+
+def add_step_to_solution(population):
+    for solution_index, solution in enumerate(population):
+        solution.attribute_list.append(0) 
+
+def check_possible_next_step(solution):
+    sol_dims = len(solution.interval_by_attr)
+
+    nodes_not_discovered = [i for i in range(sol_dims-1)]
+    nodes_not_discovered = nodes_not_discovered[:solution.attribute_list[0]] + nodes_not_discovered[solution.attribute_list[0]+1:]
+
+    return nodes_not_discovered
+
+def ACS_algorithm(total_iters, termination_criteria, population, q0, 
+                  phi, init_pheromone, persistence, alpha, beta, pheromones=[]):
     
+    n_iter = 0
+    
+    sol_dims = len(population[0].interval_by_attr)
+
+    pheromones = ACS_init_pheromones(pheromones, sol_dims)
     updating_pheromones = lambda phero: (1-persistence)*phero
 
     #while termination_criteria(population):
     printProgressBar(0, total_iters)
     while n_iter < total_iters:
         
-        for i, ant in enumerate(population):
-            ant.attribute_list.append(i % sol_dims)            
+        add_step_to_solution(population)           
                     
         for ant in population:
-            nodes_not_discovered = [i for i in range(sol_dims-1)]
-            nodes_not_discovered = nodes_not_discovered[:ant.attribute_list[0]] + nodes_not_discovered[ant.attribute_list[0]+1:]
+            nodes_not_discovered = check_possible_next_step(ant)
             
             while nodes_not_discovered != []:
                 # Compute pseudo-random proporcional rule                
@@ -792,6 +808,14 @@ def WOA_algorithm(total_iters, population, a, a_step, b, A, C):
 
         total_iters += 1
                 
+
+#%%
+
+def MSA_init(population):
+
+    for monkey in population:
+
+
 
 # In[3]:
 
