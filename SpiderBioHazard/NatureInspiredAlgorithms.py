@@ -1,4 +1,5 @@
 import copy
+import math
 import numpy as np
 import random
 
@@ -7,11 +8,11 @@ from Galfgets import printProgressBar
 from Solution import Solution
 
 # Methods to modify solutions in algorithm execution
-def _clean_population_attr(population:list) -> void:
+def _clean_population_attr(population:list) -> None:
     for solution in population:
         solution.attribute_list = []
 
-def _add_step_to_population(population:list) -> void:
+def _add_step_to_population(population:list) -> None:
     for solution_index, solution in enumerate(population):
         solution.attribute_list.append(0) 
 
@@ -281,7 +282,7 @@ def _best_node_selection(solution:Solution, pheromones:np.array, alpha:float,
         
     return posible_nodes
 
-def ACS_init_pheromones(pheromones, sol_dims):
+def ACS_init_pheromones(pheromones, sol_dims, init_pheromone):
     if pheromones == []:
         pheromones = np.full((sol_dims,sol_dims), init_pheromone)
         pheromones[np.eye(sol_dims) == 1] = 0
@@ -308,7 +309,7 @@ def ACS_algorithm(total_iters:int, termination_criteria:callable, population:lis
         _add_step_to_population(population)           
                     
         for ant in population:
-            nodes_not_discovered = check_possible_next_step(ant)
+            nodes_not_discovered = _check_possible_next_step(ant)
 
             while nodes_not_discovered != []:
                 # Compute pseudo-random proporcional rule                
@@ -326,7 +327,7 @@ def ACS_algorithm(total_iters:int, termination_criteria:callable, population:lis
                     nodes_viable = _pseudo_random_proportional_rule(ant, pheromones, alpha, beta,
                                                                    nodes_not_discovered)
                     
-                    node_sel = choice(nodes_not_discovered, 1, nodes_viable)
+                    node_sel = random.choice(nodes_not_discovered, 1, nodes_viable)
                     new_state  = node_sel[0]
                     
                     ant.attribute_list.append(new_state)
@@ -374,43 +375,57 @@ def ACS_algorithm(total_iters:int, termination_criteria:callable, population:lis
 ## DOI: https://doi.org/10.1016/j.advengsoft.2016.01.008
 ## Authors: Seyedali Mirjaliliab, Andrew Lewisa
 ## Year: 2016
-
-def _WOA_init(population):
-    a = np.full(shape=[1, len(population[0].attribute_list)])
-
+def _WOA_init(population, parameter_a):
+    a = np.full(shape=[1, len(population[0].attribute_list)], fill_value=parameter_a)
     return a    
     
 
 def _WOA_encircle_search(actual_whale, whale_to_update, parameter_A, parameter_C):
-"""
-A ver en general encircle prey y search son literalmente el mismo metodo, por eso lo
-hago asi todo junto. Que esta muy bien lo de los algoritmos inspirados en naturaleza
-pero esta mejor no tener codigo clon a punta pala.
-"""
-    parameter_D = np.linalg.norm(np.multiply(parameter_C, whale_to_update.attribute_list) - actual_whale.attribute_list)
-    return whale_to_update.attribute_list - np.multiply(parameter_A, parameter_D)
+    parameter_D = np.absolute(np.subtract(np.multiply(parameter_C, whale_to_update.attribute_list), actual_whale.attribute_list))
+    return np.subtract(whale_to_update.attribute_list, np.multiply(parameter_A, parameter_D))
 
 def _WOA_attack(whale, best_whale, constant_b, parameter_l):
-    parameter_D = np.linalg.norm(best_whale.attribute_list - whale.attribute_list)
-    return np.multiply(np.multiply(parameter_D, np.exp(constant_b*parameter_l)), np.cos(2.0*np.pi*parameter_l)) + best_whale.attribute_list
+    parameter_D = np.absolute(np.subtract(best_whale.attribute_list, whale.attribute_list))
+    np1 = np.multiply(np.multiply(parameter_D, np.exp(constant_b*parameter_l)), np.cos(2.0*np.pi*parameter_l))
+    
+    return np.add(np1, best_whale.attribute_list)
 
+def _WOA_compute_A(parameter_a):
+    return np.subtract(np.subtract(np.multiply(parameter_a, 2), np.random.rand(*parameter_a.shape)), parameter_a)
 
-def WOA_algorithm(total_iters, population, a, a_step, b, A, C):
+def _WOA_compute_C(parameter_a):
+    return np.multiply(np.random.rand(*parameter_a.shape) ,2)
+
+def _WOA_amend_whale(whale):
+    for attr_index, attribute in enumerate(whale.attribute_list):
+
+        if (attribute < whale.interval_by_attr[attr_index][0]) or (attribute > whale.interval_by_attr[attr_index][1]):
+            whale.attribute_list[attr_index] = attribute % whale.interval_by_attr[attr_index][1]
+
+def WOA_algorithm(total_iters, population, a_value, a_step, b):
 
     n_iter = 0
     
     fitness_results = [whale.fitness_function() for whale in population]
     best_whale = population[fitness_results.index(min(fitness_results))]
 
-    a = _WAO_init(population)
+    a = _WOA_init(population, a_value)
+    a_value_cpy = a_value
     
     printProgressBar(0, total_iters)
 
     while n_iter < total_iters:
         for whale_index, whale in enumerate(population):
-            a -= a_step
-            A = 2 * a - np.random.rand(*a.shape) - a
-            C = 2 * np.random.rand(*a.shape)
+            
+            if a_value_cpy - a_step >= 0:
+                a -= np.full(shape=a.shape, fill_value=a_step)
+                a_value_cpy -= a_step
+                
+            else:
+                a = np.full(shape=a.shape, fill_value=0)
+
+            A = _WOA_compute_A(a)
+            C = _WOA_compute_C(a)
             
             l = np.random.rand(*a.shape)
             p = random.uniform(0, 1)
@@ -424,12 +439,15 @@ def WOA_algorithm(total_iters, population, a, a_step, b, A, C):
                     random_whale = random.choice(population[0:whale_index]+population[whale_index+1:])
                     new_attributes = _WOA_encircle_search(whale, random_whale, A, C)
             else:
-                new_attributes = _WOA_attack(actual_whale, best_whale, b, l)
+                new_attributes = _WOA_attack(whale, best_whale, b, l)
             
-            actual_whale.attribute_list = new_attributes
-                
+            whale.attribute_list = [int(x) for x in new_attributes.tolist()[0]]
+            _WOA_amend_whale(whale)
+            
         fitness_results = [whale.fitness_function() for whale in population]
         best_whale = population[fitness_results.index(min(fitness_results))]
 
-        total_iters += 1
+        n_iter += 1
+        
+        printProgressBar(n_iter, total_iters)
                 

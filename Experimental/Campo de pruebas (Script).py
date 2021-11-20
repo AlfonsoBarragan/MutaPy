@@ -40,8 +40,8 @@ print(int_by_attr[:1] + int_by_attr[1+1 :])
 
 def param_sol(size):
     # attrs = list(range(0, size))
-    attrs = [n for n in range(1, size+1)]
-    int_by_attr = [(1, size-1) for number in range(1, size+1)]
+    attrs = [n for n in range(0, size)]
+    int_by_attr = [(0, size-1) for number in range(0, size)]
     
     return attrs, int_by_attr
 
@@ -69,6 +69,9 @@ def fitness_funct(self):
         final_attacks = [True for index,_ in enumerate(attacks_1) if (attacks_1[index] == 0) or (attacks_2[index] == True)]
 
         attack += (final_attacks.count(True))
+        
+        if queen_row > self.interval_by_attr[queen_col][1] or queen_row < self.interval_by_attr[queen_col][0]:
+            attack += 9999999999
         
         
     return attack
@@ -179,7 +182,7 @@ random_function = lambda x: random_funct(x)
 n_queens_sol = Solution(fit_function, random_function, show_function, mutation_function, 
                         add_sols, subs_sols, mult_sols, div_sols, attrs, int_by_attr)
 
-population = generate_population(100, 32)
+population = generate_population(10, 32)
 
 population_ACS = generate_population(100, 16)
 
@@ -536,7 +539,9 @@ def pseudo_random_proportional_rule(solution, pheromones, alpha, beta, nodes_not
     sol_aux.attribute_list.append(-1)
         
     for i in nodes_not_discovered:
-        sol_aux.attribute_list[-1] = i        
+        sol_aux.attribute_list[-1] = i       
+        print((math.pow(pheromones[solution.attribute_list[last_parameter_assign]][i], alpha) *
+                              math.pow(sol_aux.fitness_function(), beta)))
               
         posible_nodes.append((math.pow(pheromones[solution.attribute_list[last_parameter_assign]][i], alpha) *
                               math.pow(sol_aux.fitness_function(), beta)))
@@ -753,43 +758,57 @@ def CSA_algorithm(init_population, max_iters, stop_criteria):
 
 # In[2]:
 
-def WOA_init(population):
-    
-    a = np.full(shape=[1, len(population[0].attribute_list)])
-
+def WOA_init(population, parameter_a):
+    a = np.full(shape=[1, len(population[0].attribute_list)], fill_value=parameter_a)
     return a    
     
 
 def WOA_encircle_search(actual_whale, whale_to_update, parameter_A, parameter_C):
-"""
-A ver en general encircle prey y search son literalmente el mismo metodo, por eso lo
-hago asi todo junto. Que esta muy bien lo de los algoritmos inspirados en naturaleza
-pero esta mejor no tener codigo clon a punta pala.
-"""
-    parameter_D = np.linalg.norm(np.multiply(parameter_C, whale_to_update.attribute_list) - actual_whale.attribute_list)
-    return whale_to_update.attribute_list - np.multiply(parameter_A, parameter_D)
+    parameter_D = np.absolute(np.subtract(np.multiply(parameter_C, whale_to_update.attribute_list), actual_whale.attribute_list))
+    return np.subtract(whale_to_update.attribute_list, np.multiply(parameter_A, parameter_D))
 
 def WOA_attack(whale, best_whale, constant_b, parameter_l):
-    parameter_D = np.linalg.norm(best_whale.attribute_list - whale.attribute_list)
-    return np.multiply(np.multiply(parameter_D, np.exp(constant_b*parameter_l)), np.cos(2.0*np.pi*parameter_l)) + best_whale.attribute_list
+    parameter_D = np.absolute(np.subtract(best_whale.attribute_list, whale.attribute_list))
+    np1 = np.multiply(np.multiply(parameter_D, np.exp(constant_b*parameter_l)), np.cos(2.0*np.pi*parameter_l))
+    
+    return np.add(np1, best_whale.attribute_list)
 
+def WOA_compute_A(parameter_a):
+    return np.subtract(np.subtract(np.multiply(parameter_a, 2), np.random.rand(*parameter_a.shape)), parameter_a)
 
-def WOA_algorithm(total_iters, population, a, a_step, b, A, C):
+def WOA_compute_C(parameter_a):
+    return np.multiply(np.random.rand(*parameter_a.shape) ,2)
+
+def WOA_amend_whale(whale):
+    for attr_index, attribute in enumerate(whale.attribute_list):
+
+        if (attribute < whale.interval_by_attr[attr_index][0]) or (attribute > whale.interval_by_attr[attr_index][1]):
+            whale.attribute_list[attr_index] = attribute % whale.interval_by_attr[attr_index][1]
+
+def WOA_algorithm(total_iters, population, a_value, a_step, b):
 
     n_iter = 0
     
     fitness_results = [whale.fitness_function() for whale in population]
     best_whale = population[fitness_results.index(min(fitness_results))]
 
-    a = WAO_init(population)
+    a = WOA_init(population, a_value)
+    a_value_cpy = a_value
     
     printProgressBar(0, total_iters)
 
     while n_iter < total_iters:
         for whale_index, whale in enumerate(population):
-            a -= a_step
-            A = 2 * a - np.random.rand(*a.shape) - a
-            C = 2 * np.random.rand(*a.shape)
+            
+            if a_value_cpy - a_step >= 0:
+                a -= np.full(shape=a.shape, fill_value=a_step)
+                a_value_cpy -= a_step
+                
+            else:
+                a = np.full(shape=a.shape, fill_value=0)
+
+            A = WOA_compute_A(a)
+            C = WOA_compute_C(a)
             
             l = np.random.rand(*a.shape)
             p = random.uniform(0, 1)
@@ -803,15 +822,45 @@ def WOA_algorithm(total_iters, population, a, a_step, b, A, C):
                     random_whale = random.choice(population[0:whale_index]+population[whale_index+1:])
                     new_attributes = WOA_encircle_search(whale, random_whale, A, C)
             else:
-                new_attributes = WOA_attack(actual_whale, best_whale, b, l)
+                new_attributes = WOA_attack(whale, best_whale, b, l)
             
-            actual_whale.attribute_list = new_attributes
-                
+            whale.attribute_list = [int(x) for x in new_attributes.tolist()[0]]
+            WOA_amend_whale(whale)
+            
         fitness_results = [whale.fitness_function() for whale in population]
         best_whale = population[fitness_results.index(min(fitness_results))]
 
-        total_iters += 1
-                
+        n_iter += 1
+        
+        printProgressBar(n_iter, total_iters)
+
+        
+#%%
+
+fitness_results = [whale.fitness_function() for whale in population]
+best_whale = population[fitness_results.index(min(fitness_results))]
+
+evolution.append(mean(fitness_results))
+
+evolution = []
+
+print('------------------------------------')
+
+
+print(f'best_fitness = {best_whale.fitness_function()}\nattributes = {best_whale.attribute_list}\nfitness_mean = {mean(fitness_results)}')
+print('------------------------------------')
+
+for i in range(100):
+    WOA_algorithm(10000, population, 2.0, 0.2, 1)
+    
+    fitness_results = [whale.fitness_function() for whale in population]
+    best_whale = population[fitness_results.index(min(fitness_results))]
+    
+    evolution.append(mean(fitness_results))
+    
+    print(f'best_fitness = {best_whale.fitness_function()}\nattributes = {best_whale.attribute_list}\nfitness_mean = {mean(fitness_results)}')
+    print('------------------------------------')
+
 
 #%%
 
