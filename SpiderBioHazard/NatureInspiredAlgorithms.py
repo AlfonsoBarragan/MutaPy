@@ -2,6 +2,7 @@ import copy
 import math
 import numpy as np
 import random
+import functools
 
 
 from Galfgets import printProgressBar
@@ -282,25 +283,25 @@ def _best_node_selection(solution:Solution, pheromones:np.array, alpha:float,
         
     return posible_nodes
 
-def ACS_init_pheromones(pheromones, sol_dims, init_pheromone):
-    if pheromones == []:
-        pheromones = np.full((sol_dims,sol_dims), init_pheromone)
-        pheromones[np.eye(sol_dims) == 1] = 0
-
+def ACS_init_pheromones(sol_dims, init_pheromone):
+    pheromones = np.full((sol_dims,sol_dims), init_pheromone)
+    pheromones[np.eye(sol_dims) == 1] = 0
+    
     return pheromones
 
-def ACS_algorithm(total_iters:int, termination_criteria:callable, population:list, q0:float, 
-                  phi:float, init_pheromone:float, persistence:float, alpha:float, 
-                  beta:float, pheromones:list=[]) -> np.array:
+def ACS_algorithm(total_iters, termination_criteria, population, q0, 
+                  phi, init_pheromone, persistence, alpha, beta, pheromones):
     
     n_iter = 0
     
     sol_dims = len(population[0].interval_by_attr)
-
-    pheromones = ACS_init_pheromones(pheromones, sol_dims)
-
     
-    updating_pheromones = lambda phero: (1-persistence)*phero
+    if len(pheromones) == 0:
+        pheromones = ACS_init_pheromones(sol_dims, init_pheromone)
+    
+    evaporate_pheromones = lambda phero: (1-persistence)*phero
+    
+    _clean_population_attr(population)    
 
     #while termination_criteria(population):
     printProgressBar(0, total_iters)
@@ -310,13 +311,13 @@ def ACS_algorithm(total_iters:int, termination_criteria:callable, population:lis
                     
         for ant in population:
             nodes_not_discovered = _check_possible_next_step(ant)
-
+                        
             while nodes_not_discovered != []:
                 # Compute pseudo-random proporcional rule                
                 if random.uniform(0,1) <= q0:
                     nodes_viable = _best_node_selection(ant, pheromones, alpha, beta,
                                                        nodes_not_discovered)
-                    
+                                        
                     node_sel = min(nodes_viable)
                     new_state  = nodes_viable.index(node_sel)
 
@@ -344,8 +345,8 @@ def ACS_algorithm(total_iters:int, termination_criteria:callable, population:lis
         
         best_ant = population[fitness_vals.index(gBest)]
         
-        pheromones_updated = pheromones.copy()
-        pheromones_updated = np.array([updating_pheromones(xi) for xi in pheromones_updated])
+        pheromones_updated = copy.deepcopy(pheromones)
+        pheromones_updated = np.multiply(pheromones_updated, np.full((sol_dims,sol_dims), 1 - persistence))
         
         best_ant_path = zip(best_ant.attribute_list[:len(best_ant.attribute_list)-1], best_ant.attribute_list[1:])
         
@@ -353,10 +354,9 @@ def ACS_algorithm(total_iters:int, termination_criteria:callable, population:lis
             pheromones_updated[tuple_nodes[0]][tuple_nodes[1]] = ((1 - persistence) * (pheromones_updated[tuple_nodes[0]][tuple_nodes[1]]) +
                                                                  (((1/gBest) * persistence)))
         if n_iter != total_iters-1:    
-            for ant in population:
-                ant.attribute_list = []
+            _clean_population_attr(population)
         
-        pheromones = pheromones_updated.copy()
+        pheromones = copy.deepcopy(pheromones_updated)
         
         n_iter += 1
         printProgressBar(n_iter, total_iters)    
@@ -450,4 +450,3 @@ def WOA_algorithm(total_iters, population, a_value, a_step, b):
         n_iter += 1
         
         printProgressBar(n_iter, total_iters)
-                

@@ -23,6 +23,23 @@ from Galfgets import printProgressBar, mean, standard_desviation
 from datetime import datetime
 
 
+def clean_population_attr(population):
+    for solution in population:
+        solution.attribute_list = []
+
+def add_step_to_solution(population):
+    for solution_index, solution in enumerate(population):
+        solution.attribute_list.append(0) 
+
+def check_possible_next_step(solution):
+    sol_dims = len(solution.interval_by_attr)
+
+    nodes_not_discovered = [i for i in range(sol_dims-1)]
+    nodes_not_discovered = nodes_not_discovered[:solution.attribute_list[0]] + nodes_not_discovered[solution.attribute_list[0]+1:]
+
+    return nodes_not_discovered
+
+
 # In[42]:
 
 
@@ -111,10 +128,14 @@ def random_funct(self):
 
 def show_function(self):
     
-    str_to_show = "|"
+    mat = [['–' for x in range(self.interval_by_attr[0][1]+1)] for y in range(self.interval_by_attr[0][1]+1)]
     
-    size = len(self.attribute_list)
-    #TODO
+    for column, row in enumerate(self.attribute_list):
+        mat[column][row] = 'Q'
+    
+    for r in mat:
+        print(str(r).replace(',', '').replace('\'', ''))
+    print()
         
 def mutation_function(self):
     n_dim = random.randint(0, len(self.attribute_list))
@@ -182,7 +203,7 @@ random_function = lambda x: random_funct(x)
 n_queens_sol = Solution(fit_function, random_function, show_function, mutation_function, 
                         add_sols, subs_sols, mult_sols, div_sols, attrs, int_by_attr)
 
-population = generate_population(10, 32)
+population = generate_population(10, 16)
 
 population_ACS = generate_population(100, 16)
 
@@ -525,6 +546,10 @@ print(population[9].attribute_list)
 print(fitness_vals.index(min(fitness_vals)))
 print(min(fitness_vals))
 
+#%%
+
+
+
 
 # ### ACS ALGORITHM
 
@@ -540,8 +565,6 @@ def pseudo_random_proportional_rule(solution, pheromones, alpha, beta, nodes_not
         
     for i in nodes_not_discovered:
         sol_aux.attribute_list[-1] = i       
-        print((math.pow(pheromones[solution.attribute_list[last_parameter_assign]][i], alpha) *
-                              math.pow(sol_aux.fitness_function(), beta)))
               
         posible_nodes.append((math.pow(pheromones[solution.attribute_list[last_parameter_assign]][i], alpha) *
                               math.pow(sol_aux.fitness_function(), beta)))
@@ -551,6 +574,7 @@ def pseudo_random_proportional_rule(solution, pheromones, alpha, beta, nodes_not
     
     if denom != 0:
         posible_nodes = list(map(lambda x: x/denom, posible_nodes))
+        
     
     return posible_nodes
 
@@ -561,6 +585,7 @@ def best_node_selection(solution, pheromones, alpha, beta, nodes_not_discovered)
     sol_aux = copy.deepcopy(solution)
     sol_aux.attribute_list.append(-1)
     
+        
     for i in nodes_not_discovered:
         sol_aux.attribute_list[-1] = i        
               
@@ -569,38 +594,28 @@ def best_node_selection(solution, pheromones, alpha, beta, nodes_not_discovered)
         
     return posible_nodes
 
-def ACS_init_pheromones(pheromones, sol_dims):
-    if pheromones == []:
-        pheromones = np.full((sol_dims,sol_dims), init_pheromone)
-        pheromones[np.eye(sol_dims) == 1] = 0
-
+def ACS_init_pheromones(sol_dims, init_pheromone):
+    pheromones = np.full((sol_dims,sol_dims), init_pheromone)
+    pheromones[np.eye(sol_dims) == 1] = 0
+    
     return pheromones
 
-def clean_population_attr(population):
-    for solution in population:
-        solution.attribute_list = []
 
-def add_step_to_solution(population):
-    for solution_index, solution in enumerate(population):
-        solution.attribute_list.append(0) 
 
-def check_possible_next_step(solution):
-    sol_dims = len(solution.interval_by_attr)
-
-    nodes_not_discovered = [i for i in range(sol_dims-1)]
-    nodes_not_discovered = nodes_not_discovered[:solution.attribute_list[0]] + nodes_not_discovered[solution.attribute_list[0]+1:]
-
-    return nodes_not_discovered
 
 def ACS_algorithm(total_iters, termination_criteria, population, q0, 
-                  phi, init_pheromone, persistence, alpha, beta, pheromones=[]):
+                  phi, init_pheromone, persistence, alpha, beta, pheromones):
     
     n_iter = 0
     
     sol_dims = len(population[0].interval_by_attr)
-
-    pheromones = ACS_init_pheromones(pheromones, sol_dims)
-    updating_pheromones = lambda phero: (1-persistence)*phero
+    
+    if len(pheromones) == 0:
+        pheromones = ACS_init_pheromones(sol_dims, init_pheromone)
+    
+    evaporate_pheromones = lambda phero: (1-persistence)*phero
+    
+    clean_population_attr(population)    
 
     #while termination_criteria(population):
     printProgressBar(0, total_iters)
@@ -610,13 +625,13 @@ def ACS_algorithm(total_iters, termination_criteria, population, q0,
                     
         for ant in population:
             nodes_not_discovered = check_possible_next_step(ant)
-            
+                        
             while nodes_not_discovered != []:
                 # Compute pseudo-random proporcional rule                
                 if random.uniform(0,1) <= q0:
                     nodes_viable = best_node_selection(ant, pheromones, alpha, beta,
                                                        nodes_not_discovered)
-                    
+                                        
                     node_sel = min(nodes_viable)
                     new_state  = nodes_viable.index(node_sel)
 
@@ -644,8 +659,8 @@ def ACS_algorithm(total_iters, termination_criteria, population, q0,
         
         best_ant = population[fitness_vals.index(gBest)]
         
-        pheromones_updated = pheromones.copy()
-        pheromones_updated = np.array([updating_pheromones(xi) for xi in pheromones_updated])
+        pheromones_updated = copy.deepcopy(pheromones)
+        pheromones_updated = np.multiply(pheromones_updated, np.full((sol_dims,sol_dims), 1 - persistence))
         
         best_ant_path = zip(best_ant.attribute_list[:len(best_ant.attribute_list)-1], best_ant.attribute_list[1:])
         
@@ -653,38 +668,55 @@ def ACS_algorithm(total_iters, termination_criteria, population, q0,
             pheromones_updated[tuple_nodes[0]][tuple_nodes[1]] = ((1 - persistence) * (pheromones_updated[tuple_nodes[0]][tuple_nodes[1]]) +
                                                                  (((1/gBest) * persistence)))
         if n_iter != total_iters-1:    
-            for ant in population:
-                ant.attribute_list = []
+            clean_population_attr(population)
         
-        pheromones = pheromones_updated.copy()
+        pheromones = copy.deepcopy(pheromones_updated)
         
         n_iter += 1
         printProgressBar(n_iter, total_iters)    
         
+    
     return pheromones
-
-
-# In[444]:
-
-
-get_ipython().run_cell_magic('time', '', "\nfor solution in population_ACS:\n    solution.attribute_list = []\n\n#phero = ACS_algorithm(10, '', population_ACS[0:28], 0.8, 0.2, 30, 1, 0.4, 1.5, 0.3)\nphero = ACS_algorithm(100, '', population_ACS, 1, 1, 30, 1, 0.5, 0.4, 1)")
-
 
 # In[445]:
 
+phero = []
 
-phero 
+file = open('results.txt', 'w')
+
+for i in range(20):
+    phero = ACS_algorithm(100, '', population_ACS, 0.3, 0.2, 30, 0.4, 0.4, 1.5, phero)
+    
+    fitness_vals = [particle.fitness_function() for particle in population_ACS]
+    print(fitness_vals)
+
+    print(f'ant_attributes: {population_ACS[fitness_vals.index(min(fitness_vals))].attribute_list}\nant_index: {fitness_vals.index(min(fitness_vals))} ant_fitness: {min(fitness_vals)}')
+    print(f'fitness mean: {mean(fitness_vals)}')
+    
+    
+    population_ACS[fitness_vals.index(min(fitness_vals))].show_solution()
+    
+    
+    file.write(f'iteration: {i} (100 subiterations)\n')
+    file.write(f'ant_attributes: {population_ACS[fitness_vals.index(min(fitness_vals))].attribute_list}\nant_index: {fitness_vals.index(min(fitness_vals))} ant_fitness: {min(fitness_vals)}\n')
+    file.write(f'fitness mean: {mean(fitness_vals)}\n')
+    
+    file.write('######################################\n')
+    
+file.close()
+
+# pheromones = ACS_algorithm(10, '', population_ACS, 0.5, 1, 30, 1, 0.5, 0.4, phero)
 
 
 # In[446]:
 
 
-fitness_vals = [particle.fitness_function() for particle in population_ACS[0:28]]
+fitness_vals = [particle.fitness_function() for particle in population_ACS]
 print(fitness_vals)
 
-print(population_ACS[17].attribute_list)
-print(fitness_vals.index(min(fitness_vals)))
-print(min(fitness_vals))
+print(f'ant_attributes: {population_ACS[fitness_vals.index(min(fitness_vals))].attribute_list}\nant_index: {fitness_vals.index(min(fitness_vals))} ant_fitness: {min(fitness_vals)}')
+print(f'fitness mean: {mean(fitness_vals)}')
+population_ACS[fitness_vals.index(min(fitness_vals))].show_solution()
 
 
 # ### Fish swarm algorithm
@@ -834,7 +866,58 @@ def WOA_algorithm(total_iters, population, a_value, a_step, b):
         
         printProgressBar(n_iter, total_iters)
 
+def VDWOA_algorithm(total_iters, population, a_value, a_step, b, epsilon):
+
+    n_iter = 0
+    
+    fitness_results = [whale.fitness_function() for whale in population]
+    best_whale = population[fitness_results.index(min(fitness_results))]
+
+    a = WOA_init(population, a_value)
+    a_value_cpy = a_value
+    
+    printProgressBar(0, total_iters)
+
+    while n_iter < total_iters:
+        for whale_index, whale in enumerate(population):
+            
+            if a_value_cpy - a_step >= 0:
+                a -= np.full(shape=a.shape, fill_value=a_step)
+                a_value_cpy -= a_step
+                
+            else:
+                a = np.full(shape=a.shape, fill_value=0)
+
+            A = WOA_compute_A(a)
+            C = WOA_compute_C(a)
+            
+            l = np.random.rand(*a.shape)
+            p = random.uniform(0, 1)
+            
+            if p < 0.5:
+                #bubble net hunting
+                if np.linalg.norm(A) < 1:
+                    
+                    if 
+                    new_attributes = WOA_encircle_search(whale, best_whale, A, C)
+
+                else:
+                    random_whale = random.choice(population[0:whale_index]+population[whale_index+1:])
+                    new_attributes = WOA_encircle_search(whale, random_whale, A, C)
+            else:
+                new_attributes = WOA_attack(whale, best_whale, b, l)
+            
+            whale.attribute_list = [int(x) for x in new_attributes.tolist()[0]]
+            WOA_amend_whale(whale)
+            
+        fitness_results = [whale.fitness_function() for whale in population]
+        best_whale = population[fitness_results.index(min(fitness_results))]
+
+        n_iter += 1
         
+        printProgressBar(n_iter, total_iters)
+
+
 #%%
 
 fitness_results = [whale.fitness_function() for whale in population]
