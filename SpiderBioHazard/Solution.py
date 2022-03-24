@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import numpy as np
 
 @dataclass(init=True, repr=True)
 class Solution:
@@ -50,10 +51,10 @@ class Solution:
             show_solution: Method that will show the solution by screen.
 
         attributes:
-            attribute_list (list):              This attribute are all the characteristics that had
+            attribute_list (np.array):          This attribute are all the characteristics that had
                                                 the solution to work with.
 
-            interval_by_attr (list):            This attribute are a list of tuples that contains
+            interval_by_attr (np.array):        This attribute are a list of tuples that contains
                                                 the maximum and minimum value for the attribute_list
                                                 at the same index.
 
@@ -82,8 +83,8 @@ class Solution:
     _mul_funct: callable
     _div_funct: callable
 
-    attribute_list: list
-    interval_by_attr: list
+    attribute_list: np.array
+    interval_by_attr: np.array
 
     def __add__(self, other):
         return self._add_funct(self, other) 
