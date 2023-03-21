@@ -10,10 +10,10 @@ class Solution:
 
         functions:
             __init__: Initialization method for the class.
-                -> attribute_list (list):           This argument should be the list of 
+                -> attribute_list (np.array):       This argument should be the list of 
                                                     characteristics that the solution had
                                                     and should use to calculate the fitness.
-                -> interval_by_attr (list):         This argument should be a list of tuples
+                -> interval_by_attr (np.array):     This argument should be a list of tuples
                                                     which each tuple should be the maximum 
                                                     and minimum value for a determinated 
                                                     attribute in attribute_list.
@@ -73,18 +73,18 @@ class Solution:
                                                 current solution.
             
     """
+    attribute_list: np.array
+    interval_by_attr: np.array
+
     _fitness_function: callable
     _random_function: callable
     _show_function: callable
     _mutation_function: callable
 
-    _add_funct: callable
-    _sub_funct: callable
-    _mul_funct: callable
-    _div_funct: callable
-
-    attribute_list: np.array
-    interval_by_attr: np.array
+    _add_funct: callable = None
+    _sub_funct: callable = None
+    _mul_funct: callable = None
+    _div_funct: callable = None
 
     def __add__(self, other):
         return self._add_funct(self, other) 
@@ -107,3 +107,15 @@ class Solution:
     def show_solution(self):
         return self._show_function(self)
 
+    def correct_solution_limits(self, type_data):
+        for attr_index, attr in enumerate(self.attribute_list):
+            if (attr > self.interval_by_attr[attr_index][1]):
+                self.attribute_list[attr_index] = self.interval_by_attr[attr_index][1]
+            
+            elif (attr < self.interval_by_attr[attr_index][0]):
+                self.attribute_list[attr_index] = self.interval_by_attr[attr_index][0]
+        
+        try:
+            exec(f"self.attribute_list = self.attribute_list.astype({type_data})")
+        except Exception as e:
+            print(e)
