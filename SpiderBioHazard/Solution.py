@@ -93,7 +93,7 @@ class Solution:
         return self._sub_funct(self, other) 
 
     def __mul__(self, other):
-        return self._mult_funct(self, other) 
+        return self._mul_funct(self, other) 
 
     def fitness_function(self):
         return self._fitness_function(self)

@@ -287,6 +287,9 @@ def SOS_algorithm(iterations:int, termination_criteria:callable,
 ## DOI: https://doi.org/10.1016/j.compstruc.2014.03.007
 ## Authors: Min-Yuan Cheng, Doddy Prayogo
 ## Year: 2014
+
+_updating_pheromones = lambda phero, persistence: (1-persistence)*phero
+
 def _pseudo_random_proportional_rule(solution:Solution, pheromones:np.array, alpha:float, beta:float, nodes_not_discovered:list) -> list:
     posible_nodes = []
     sol_aux = copy.deepcopy(solution)
@@ -369,7 +372,7 @@ def ACS_algorithm(total_iters:int, termination_criteria:callable, population:lis
                     nodes_not_discovered = np.append(nodes_not_discovered[:new_state], nodes_not_discovered[new_state + 1:])                    
                     
                 else:
-                    nodes_viable = pseudo_random_proportional_rule(ant, pheromones, alpha, beta,
+                    nodes_viable = _pseudo_random_proportional_rule(ant, pheromones, alpha, beta,
                                                                    nodes_not_discovered)
                     node_sel = choice(nodes_not_discovered, 1, p=nodes_viable)
                     new_state  = np.where(nodes_not_discovered == node_sel[0])[0][0]
@@ -394,7 +397,7 @@ def ACS_algorithm(total_iters:int, termination_criteria:callable, population:lis
         best_ant = population[fitness_vals.index(gBest)]
         
         pheromones_updated = pheromones.copy()
-        pheromones_updated = np.array([updating_pheromones(xi, persistence) for xi in pheromones_updated])
+        pheromones_updated = np.array([_updating_pheromones(xi, persistence) for xi in pheromones_updated])
                 
         for index, attribute in enumerate(best_ant.attribute_list):
             index_1 = np.where(np.array(list(range(best_ant.interval_by_attr[index][1] + 1))) == best_ant.attribute_list[index])[0][0]
@@ -480,8 +483,8 @@ def WOA_algorithm(total_iters:int, termination_criteria:callable,
         for whale_index, whale in enumerate(population):
             
             if a_value_cpy - a_step >= 0:
-                a -= np.full(shape=a.shape, fill_value=a_step)
-                a_value_cpy -= a_step
+                a = a - a_step
+                a_value_cpy = a_value_cpy - a_step
                 
             else:
                 a = np.full(shape=a.shape, fill_value=0)
