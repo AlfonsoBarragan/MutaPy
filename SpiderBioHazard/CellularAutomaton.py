@@ -3,31 +3,33 @@ import numpy as np
 from dataclasses import dataclass
 
 
-def _compute_iterations(cellular_automaton:CellularAutomaton): 
-    """ This function generates automatically the loop over the population 
+def _compute_iterations(cellular_automaton: CellularAutomaton):
+    """ This function generates automatically the loop over the population
         and compute the transition rule giving on __init__ method.
 
     Parameters:
     This function doesn't need any parameter.
 
-    Returns: 
-    This functions doesn't return anything. It just assigns iterate function 
+    Returns:
+    This functions doesn't return anything. It just assigns iterate function
     as an attribute of the class in order to use in the iterate function.
-    
+
     """
 
     dimensions = len(cellular_automaton.population.shape)
-    
-    funct_iterate   = "def _iterate(self):\n"
-    funct_iterate   += "\t pop_cpy = copy.deepcopy(self.population)\n"
 
-    index_str       = ""
+    funct_iterate = "def _iterate(self):\n"
+    funct_iterate += "\t pop_cpy = copy.deepcopy(self.population)\n"
+
+    index_str = ""
 
     for dim in range(dimensions):
-        funct_iterate += "{0}for index_{1} in range(self.population.shape[{1}]):\n".format('\t'*i+1, i)
+        funct_iterate += ("{0}for index_{1} in range(self.population.shape[{1}]):\n"
+                          .format('\t'*i+1, i))
         index_str += "index_{},".format(i)
 
-    funct_iterate += "{0}pop_cpy[{1}] = self.transition_rule(self.population[{1}], self.neighbourhood)\n".format('\t'*dimensions, index_str)
+    funct_iterate += ("{0}pop_cpy[{1}] = self.transition_rule(self.population[{1}], self.neighbourhood)\n"
+                      .format('\t'*dimensions, index_str))
     funct_iterate += "\treturn pop_cpy\n"
 
     return funct_iterate
