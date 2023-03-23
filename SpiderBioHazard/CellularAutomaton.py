@@ -2,13 +2,15 @@
 import numpy as np
 from dataclasses import dataclass
 
-def _compute_iterations(cellular_automaton:CellularAutomaton):
-    """ This function generates automatically the loop over the population and compute the transition rule giving on __init__ method.
+
+def _compute_iterations(cellular_automaton:CellularAutomaton): 
+    """ This function generates automatically the loop over the population 
+        and compute the transition rule giving on __init__ method.
 
     Parameters:
     This function doesn't need any parameter.
 
-    Returns:
+    Returns: 
     This functions doesn't return anything. It just assigns iterate function 
     as an attribute of the class in order to use in the iterate function.
     
@@ -32,26 +34,26 @@ def _compute_iterations(cellular_automaton:CellularAutomaton):
 
 @dataclass(init=True, repr=True)
 class CellularAutomaton:
-""" Generic class to create custom celullar automatons
+    """ Generic class to create custom celullar automatons
 
-    Parameters:
-    population (np.array):          A numpy array initializate in the way that the user desires.
+        Parameters:
+        population (np.array):          A numpy array initializate in the way that the user desires.
 
-    transition_rule (callable):     A function kind object that contains the rules of transition of the cells from the automaton.
-                                    This function should take two parameters:
-                                        -> A population element / a cell. 
-                                        -> The neighbourhood to work with.
+        transition_rule (callable):     A function kind object that contains the rules of transition of the cells from the automaton.
+                                        This function should take two parameters:
+                                            -> A population element / a cell. 
+                                            -> The neighbourhood to work with.
 
-                                    and finally should return:
-                                        -> The final state of the giving cell with the correspondant neighbourhood.
+                                        and finally should return:
+                                            -> The final state of the giving cell with the correspondant neighbourhood.
 
-    neighbourhood (list):           An int list object that contains the neighbourhood to look at in order to take the automaton
-                                    to the next state.
+        neighbourhood (list):           An int list object that contains the neighbourhood to look at in order to take the automaton
+                                        to the next state.
 
-    Returns:
-    A Cellular_Automaton object kind
+        Returns:
+        A Cellular_Automaton object kind
 
-"""
+    """
 
     population: np.array
     transition_rule: callable
