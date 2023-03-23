@@ -24,25 +24,28 @@ def _compute_iterations(cellular_automaton: CellularAutomaton):
     index_str = ""
 
     for dim in range(dimensions):
-        funct_iterate += ("{0}for index_{1} in range(self.population.shape[{1}]):\n"
-                          .format('\t'*i+1, i))
+        funct_iterate += "{0}for index_{1} in range(self.population.shape[{1}]):\n".format('\t'*i+1, i)
         index_str += "index_{},".format(i)
 
-    funct_iterate += ("{0}pop_cpy[{1}] = self.transition_rule(self.population[{1}], self.neighbourhood)\n"
-                      .format('\t'*dimensions, index_str))
+    funct_iterate += "{0}pop_cpy[{1}] = self.transition_rule(self.population[{1}], self.neighbourhood)\n".format('\t'*dimensions, index_str)
     funct_iterate += "\treturn pop_cpy\n"
 
     return funct_iterate
 
 @dataclass(init=True, repr=True)
 class CellularAutomaton:
+
     """ Generic class to create custom celullar automatons
 
         Parameters:
-        population (np.array):          A numpy array initializate in the way that the user desires.
+        population (np.array):          A numpy array initializate in the way
+                                        that the user desires.
 
-        transition_rule (callable):     A function kind object that contains the rules of transition of the cells from the automaton.
-                                        This function should take two parameters:
+        transition_rule (callable):     A function kind object that
+                                        contains the rules of transition
+                                        of the cells from the automaton.
+                                        This function should take two
+                                        parameters:
                                             -> A population element / a cell. 
                                             -> The neighbourhood to work with.
 
@@ -62,14 +65,19 @@ class CellularAutomaton:
     neighbourhood: list
     _iterate: str(_compute_iterations())
 
-    def iterate(self, n_iter:int):
-        """ This functions execute the transition rule over all the population (throught _iterate) a giving number of iterations.
+    def iterate(self, n_iter: int):
+        """ This functions execute the transition
+            rule over all the population
+            (throught _iterate) a giving
+            number of iterations.
 
         Parameters:
-        n_iter (int): The integer number of iterations to execute the celullar automaton.
+        n_iter (int): The integer number of
+        iterations to execute the celullar automaton.
 
         Returns:
-        This function doesn't return anything. It just updates the population and 
+        This function doesn't return anything.
+        It just updates the population and 
         shows it.
 
         """
@@ -78,15 +86,18 @@ class CellularAutomaton:
             print(self.to_string)
             
     def to_string(self):
-        """ This functions shows the state of the population.
+        """ This functions shows the state
+            of the population.
 
         Parameters:
-        This function doesn't need any parameter at all.
+        This function doesn't need
+        any parameter at all.
 
         Returns:
-        The string representation of the population that contains the Cellular_Automaton
+        The string representation of
+        the population that contains
+        the Cellular_Automaton
         object in a certain instant.
 
         """
         return np.array2string(self.population, max_line_width=10, separator='|')
-
