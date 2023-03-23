@@ -32,6 +32,7 @@ def _compute_iterations(cellular_automaton: CellularAutomaton):
 
     return funct_iterate
 
+
 @dataclass(init=True, repr=True)
 class CellularAutomaton:
 
@@ -46,14 +47,17 @@ class CellularAutomaton:
                                         of the cells from the automaton.
                                         This function should take two
                                         parameters:
-                                            -> A population element / a cell. 
+                                            -> A population element / a cell.
                                             -> The neighbourhood to work with.
 
                                         and finally should return:
-                                            -> The final state of the giving cell with the correspondant neighbourhood.
+                                            -> The final state of the giving cell with
+                                               the correspondant neighbourhood.
 
-        neighbourhood (list):           An int list object that contains the neighbourhood to look at in order to take the automaton
-                                        to the next state.
+        neighbourhood (list):           An int list object that contains the
+                                        neighbourhood to look at in order to
+                                        take the automaton to the next
+                                        state.
 
         Returns:
         A Cellular_Automaton object kind
@@ -100,4 +104,6 @@ class CellularAutomaton:
         object in a certain instant.
 
         """
-        return np.array2string(self.population, max_line_width=10, separator='|')
+        return np.array2string(self.population,
+                               max_line_width=10,
+                               separator='|')
