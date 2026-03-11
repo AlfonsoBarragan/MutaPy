@@ -5,7 +5,6 @@ import random
 import functools
 
 
-from Galfgets.GraphicsTools import printProgressBar
 from .Solution import Solution
 from numpy.random import choice
 
@@ -255,8 +254,11 @@ def _parasitism_phase(Xi_index:int, population:list, problem_kind:str='min') -> 
     population[Xj_index] = copy.deepcopy(Xj_final)        
 
 def SOS_algorithm(iterations:int, termination_criteria:callable, 
-                  population:list, problem_kind:str='min') -> None:
+                  population:list, problem_kind:str='min', verbose=False) -> None:
     n_iteration = 0       
+
+    if verbose:  
+        printProgressBar(0, iterations)
 
     while(n_iteration < iterations):
     
@@ -281,7 +283,9 @@ def SOS_algorithm(iterations:int, termination_criteria:callable,
             break
 
         n_iteration += 1
-
+        
+        if verbose:  
+            printProgressBar(i, iterations)
 # Symbiotic Organisms Search Algorithm
 ## Paper's title: Symbiotic Organisms Search: A new metaheuristic optimization algorithm
 ## DOI: https://doi.org/10.1016/j.compstruc.2014.03.007
