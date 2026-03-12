@@ -43,18 +43,18 @@ class Solution:
     >>> sol = Solution(initial_dna, limits, my_fitness, my_mutation, ...)
     >>> sol.correct_solution_limits(float)
     """
-    attribute_list: np.array
-    interval_by_attr: np.array
+    attribute_list: np.ndarray
+    interval_by_attr: np.ndarray
 
     _fitness_function: Callable
     _random_function: Callable
     _show_function: Callable
     _mutation_function: Callable
 
-    _add_funct: Callable = None
-    _sub_funct: Callable = None
-    _mul_funct: Callable = None
-    _div_funct: Callable = None
+    _add_funct: Optional[Callable] = None
+    _sub_funct: Optional[Callable] = None
+    _mul_funct: Optional[Callable] = None
+    _div_funct: Optional[Callable] = None
 
     def __add__(self, other:'Solution') -> 'Solution':
         """Overload of the addition (+) operator.
@@ -107,7 +107,7 @@ class Solution:
         Raises:
             NotImplementedError: If `_mul_funct`has not been injected.
         """
-        if self._sub_funct is None:
+        if self._mul_funct is None:
             raise NotImplementedError("Product operator not injected in solution.")
         return self._mul_funct(self, other) 
 
@@ -119,15 +119,15 @@ class Solution:
         """
         return self._fitness_function(self)
 
-    def mutation_function(self) -> np.array:
+    def mutation_function(self) -> np.ndarray:
         """Mutates the attributes from the current solution.
 
         Returns:
             np.array: The resulting new attributes after the mutation.
         """
-        return self._mutation_function(self) 
+        return self._mutation_function(self.attribute_list) 
     
-    def randomize_function(self) -> np.array:
+    def randomize_function(self) -> np.ndarray:
         """Randomize the attributes from the current solution.
 
         Returns:
