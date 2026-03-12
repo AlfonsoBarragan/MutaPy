@@ -5,8 +5,9 @@ import random
 import functools
 
 
-from .Solution import Solution
+from Solution import Solution
 from numpy.random import choice
+from Galfgets.GraphicsTools import printProgressBar
 
 # Methods to modify solutions in algorithm execution
 def _clean_population_attr(population:list) -> None:

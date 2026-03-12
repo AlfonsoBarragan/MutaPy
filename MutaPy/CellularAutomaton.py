@@ -2,7 +2,7 @@
 import numpy as np
 from dataclasses import dataclass
 
-def _compute_iterations(cellular_automaton:CellularAutomaton):
+def _compute_iterations(cellular_automaton):
     """ This function generates automatically the loop over the population and compute the transition rule giving on __init__ method.
 
     Parameters:
@@ -32,7 +32,7 @@ def _compute_iterations(cellular_automaton:CellularAutomaton):
 
 @dataclass(init=True, repr=True)
 class CellularAutomaton:
-""" Generic class to create custom celullar automatons
+    """ Generic class to create custom celullar automatons
 
     Parameters:
     population (np.array):          A numpy array initializate in the way that the user desires.
@@ -51,7 +51,7 @@ class CellularAutomaton:
     Returns:
     A Cellular_Automaton object kind
 
-"""
+    """
 
     population: np.array
     transition_rule: callable
